@@ -24,7 +24,7 @@ class Institution(models.Model):
         return self.name
 
 class Donation(models.Model):
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField() #Number of donated bags
     categories = models.ManyToManyField(Category)
     institution = models.ForeignKey(Institution, on_delete=models.CASCADE)
     address = models.CharField(max_length=256)
