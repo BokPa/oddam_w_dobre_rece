@@ -24,10 +24,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', oddam_views.LandingPage.as_view(), name="landing-page"),
     path('add-donation/', oddam_views.AddDonation.as_view(), name="add-donation"),
+    path('institution-by-category/', oddam_views.GetInstitutionsByCategoryApi.as_view(), name="institution-by-category"),
     path('login/', oddam_views.LoginView.as_view(), name="login"),
     path('register/', oddam_views.Register.as_view(), name="register"),
     path('profile/', oddam_views.ProfileView.as_view(), name="profile"),
     path('settings/', oddam_views.SettingsView.as_view(), name="settings"),
     path('logout/', oddam_views.LogoutView.as_view(), name="logout"),
+    path('add-donation/form-confirmation/', oddam_views.FormConfirmationView.as_view(), name='form-confirmation'),
 
 ]

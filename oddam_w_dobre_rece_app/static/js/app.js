@@ -196,8 +196,10 @@ document.addEventListener("DOMContentLoaded", function() {
       this.$next.forEach(btn => {
         btn.addEventListener("click", e => {
           e.preventDefault();
+          if (this.validateForm()) {
           this.currentStep++;
           this.updateForm();
+          }
         });
       });
 
@@ -221,7 +223,6 @@ document.addEventListener("DOMContentLoaded", function() {
     updateForm() {
       this.$step.innerText = this.currentStep;
 
-      // TODO: Validation
 
       this.slides.forEach(slide => {
         slide.classList.remove("active");
@@ -234,7 +235,96 @@ document.addEventListener("DOMContentLoaded", function() {
       this.$stepInstructions[0].parentElement.parentElement.hidden = this.currentStep >= 6;
       this.$step.parentElement.hidden = this.currentStep >= 6;
 
-      // TODO: get data from inputs and show them in summary
+      if (this.currentStep === 5) {
+        this.updateSummary();
+      }
+    }
+    validateForm() {
+
+        let isValid = true;
+
+        if (this.currentStep == 1){
+            var markedCheckbox = document.querySelectorAll('input[type=checkbox]:checked');
+            if (markedCheckbox.length == 0) {
+               alert("Musisz zaznaczyć co najmniej 1 kategorię.");
+               isValid = false;
+            }
+        } else if (this.currentStep == 2) {
+            const bags = document.querySelector("input[name='bags']").value;
+            if (bags === "" || isNaN(bags) || bags < 1) {
+                alert("Wprowadź liczbę worków nie mniejszą niż 1.");
+                isValid = false;
+            }
+        } else if (this.currentStep == 3) {
+            const org = document.querySelector("input[name='organization']:checked")
+            if (org === null) {
+                alert("Musisz wybrać organizację.");
+                isValid = false;
+            }
+        } else if (this.currentStep == 4) {
+            const address = document.querySelector("input[name='address']").value;
+            const city = document.querySelector("input[name='city']").value;
+            const postcode = document.querySelector("input[name='postcode']").value;
+            const phone = document.querySelector("input[name='phone']").value;
+            const data = document.querySelector("input[name='data']").value;
+            const time = document.querySelector("input[name='time']").value;
+            const currentDateTime = new Date();
+            const selectedDateTime = new Date(`${data}T${time}`);
+            if (address === "") {
+                alert("Musisz podać adres.");
+                isValid = false;
+            } else if (city === "") {
+                alert("Musisz podać miasto.");
+                isValid = false;
+            } else if (!/^\d{2}-\d{3}$/.test(postcode)) {
+                alert("Musisz podać poprawny kod pocztowy w formacie XX-XXX.");
+                isValid = false;
+            } else if (!/^\d{9}$/.test(phone)) {
+                alert("Musisz podać poprawny numer telefonu (9 cyfr).");
+                isValid = false;
+            } else if (data === "") {
+                alert("Musisz podać datę odbioru.");
+                isValid = false;
+            } else if (time === "") {
+                alert("Musisz podać godzinę odbioru.");
+                isValid = false;
+            } else if (selectedDateTime < currentDateTime) {
+                alert("Data i godzina odbioru nie mogą być w przeszłości.");
+                isValid = false;
+            }
+        }
+        return isValid;
+    }
+
+    updateSummary() {
+
+        const bags = document.querySelector("input[name='bags']").value;
+        const categories = Array.from(document.querySelectorAll('input[type=checkbox]:checked'))
+          .map(checkbox => checkbox.dataset.categoryName)
+          .join(", ");
+
+        const organization = document.querySelector("input[name='organization']:checked").value;
+
+        const address = document.querySelector("input[name='address']").value;
+        const city = document.querySelector("input[name='city']").value;
+        const postcode = document.querySelector("input[name='postcode']").value;
+        const phone = document.querySelector("input[name='phone']").value;
+        const date = document.querySelector("input[name='data']").value;
+        const time = document.querySelector("input[name='time']").value;
+        const moreInfo = document.querySelector("textarea[name='more_info']").value || "Brak uwag";
+
+        document.querySelector(".summary--bags-text").textContent = `${bags} worki z nastepujacymi przedmiotami: ${categories}`;
+        document.querySelector(".summary--organization-text").textContent = `Dla fundacji "${organization}" w ${city}`;
+
+        document.querySelector(".summary--address").textContent = address;
+        document.querySelector(".summary--city").textContent = city;
+        document.querySelector(".summary--postcode").textContent = postcode;
+        document.querySelector(".summary--phone").textContent = phone;
+
+        document.querySelector(".summary--date").textContent = date;
+        document.querySelector(".summary--time").textContent = time;
+        document.querySelector(".summary--more-info").textContent = moreInfo;
+
     }
 
     /**
@@ -243,13 +333,113 @@ document.addEventListener("DOMContentLoaded", function() {
      * TODO: validation, send data to server
      */
     submit(e) {
-      e.preventDefault();
-      this.currentStep++;
-      this.updateForm();
+  e.preventDefault();
+
+  // Zbieranie danych z formularza
+  const formData = new FormData(document.querySelector('form'));
+  const data = {};
+  formData.forEach((value, key) => {
+    if (data[key]) {
+      if (!Array.isArray(data[key])) {
+        data[key] = [data[key]];
+      }
+      data[key].push(value);
+    } else {
+      data[key] = value;
     }
+  });
+
+  fetch('/add-donation/form-confirmation/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      window.location.href = data.redirect;
+    } else {
+      alert('Wystąpił błąd: ' + data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Wystąpił błąd. Spróbuj ponownie.');
+  });
+}
+
   }
   const form = document.querySelector(".form--steps");
   if (form !== null) {
     new FormSteps(form);
   }
+});
+
+
+function get_ids_from_check_box() {
+    var markedCheckbox = document.querySelectorAll('input[type=checkbox]:checked');
+    var ids = [];
+    markedCheckbox.forEach(box => ids.push(box.value));
+    return ids;
+}
+
+function aport() {
+    var arr = get_ids_from_check_box();
+    var moj_url = '/institution-by-category?';
+    var params = new URLSearchParams();
+    arr.forEach(id => params.append('category_ids', id));
+    var parameters = params.toString();  //parameters === type_ids=1&type_ids=2&type_ids=3
+    moj_url = moj_url + parameters;
+
+    var test = document.getElementById('organizations');
+    fetch(moj_url)
+        .then(response => response.json())
+        .then(data => {
+            while (test.firstChild) {
+                test.removeChild(test.lastChild);
+            }
+            data.forEach(function (element) {
+                const div = document.createElement('div');
+                div.classList.add('form-group', 'form-group--checkbox');
+
+                const label = document.createElement('label');
+
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'organization';
+                input.value = element.name;
+
+                const spanCheckbox = document.createElement('span');
+                spanCheckbox.classList.add('checkbox', 'radio');
+
+                const spanDescription = document.createElement('span');
+                spanDescription.classList.add('description');
+
+                const divTitle = document.createElement('div');
+                divTitle.classList.add('title');
+                divTitle.innerText = element.name;
+
+                const divSubtitle = document.createElement('div');
+                divSubtitle.classList.add('subtitle');
+                divSubtitle.innerText = 'Cel i misja: ' + element.description;
+
+                spanDescription.appendChild(divTitle);
+                spanDescription.appendChild(divSubtitle);
+                label.appendChild(input);
+                label.appendChild(spanCheckbox);
+                label.appendChild(spanDescription);
+                div.appendChild(label);
+                test.appendChild(div);
+            });
+        });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var checkboxs = document.querySelectorAll("input[type=checkbox]");
+    checkboxs.forEach(function (checkbox) {
+        checkbox.addEventListener('change', aport);
+    });
 });

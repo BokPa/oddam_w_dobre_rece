@@ -1,14 +1,18 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 # from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+# from django.core.serializers import json
 from django.db.models import Sum
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 # from django.utils import timezone
 from django.views import View
 from django.views.generic import FormView
+import json
 
 from oddam_w_dobre_rece_app.forms import RegisterForm
 from oddam_w_dobre_rece_app.models import Donation, Institution, Category
@@ -49,9 +53,30 @@ class LandingPage(View):
         }
         return render(request, "oddam_w_dobre_rece_app/index.html", context)
 
-class AddDonation(View):
+class GetInstitutionsByCategoryApi(View):
+    def get(self, request):
+        category_ids = request.GET.getlist('category_ids')
+        institutions = Institution.objects.filter(categories__in=category_ids).distinct()
+        institutions_data = []
+        for institution in institutions:
+            categories = institution.categories.all()
+            category_names = [category.name for category in categories]
+            institutions_data.append({
+                'name': institution.name,
+                'categories': category_names,
+                'description': institution.description,
+            })
+        return JsonResponse(institutions_data, safe=False)
+
+class AddDonation(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
-        return render(request, "oddam_w_dobre_rece_app/form.html")
+        categories = Category.objects.all()
+        institutions = Institution.objects.all()
+        context = {
+            "categories": categories,
+            "institutions": institutions,
+        }
+        return render(request, "oddam_w_dobre_rece_app/form.html", context)
 
 class LoginView(View):
     def get(self, request, *args, **kwargs):
@@ -109,3 +134,48 @@ class LogoutView(View):
     def get(self, request, *args, **kwargs):
         logout(request)
         return redirect('/')
+
+
+class SubmitDonation(View):
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+
+        quantity = data.get('bags')
+        categories_ids = data.get('categories', [])
+        institution_name = data.get('organization')
+        address = data.get('address')
+        city = data.get('city')
+        zip_code = data.get('postcode')
+        phone_number = data.get('phone')
+        pick_up_date = data.get('data')
+        pick_up_time = data.get('time')
+        pick_up_comment = data.get('more_info', "Brak uwag")
+        user = request.user
+
+        try:
+            institution = Institution.objects.get(name=institution_name)
+        except Institution.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Nie ma takiej instytucji'}, status=400)
+
+        categories = Category.objects.filter(id__in=categories_ids)
+
+        donation = Donation.objects.create(
+            quantity=quantity,
+            institution=institution,
+            address=address,
+            phone_number=phone_number,
+            city=city,
+            zip_code=zip_code,
+            pick_up_date=pick_up_date,
+            pick_up_time=pick_up_time,
+            pick_up_comment=pick_up_comment,
+            user=user
+        )
+        donation.categories.set(categories)
+
+        return JsonResponse({'success': True, 'redirect': 'form-confirmation'})
+
+
+class FormConfirmationView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'oddam_w_dobre_rece_app/form-confirmation.html')

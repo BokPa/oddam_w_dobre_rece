@@ -39,5 +39,4 @@ class Donation(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        default=SET_NULL
     )

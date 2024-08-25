@@ -1,37 +1,20 @@
 {% extends "oddam_w_dobre_rece_app/base.html" %}
 
-{% block content %}
-<!--{% load static %}-->
 <!--<header class="header&#45;&#45;form-page">-->
-{% block style %}header--form-page{% endblock %}
-    <nav class="container container--70">
-        <ul class="nav--actions">
-            <li class="logged-user">
-                Witaj Agata
-                <ul class="dropdown">
-                    <li><a href="#">Profil</a></li>
-                    <li><a href="#">Moje zbiórki</a></li>
-                    <li><a href="#">Wyloguj</a></li>
-                </ul>
-            </li>
-        </ul>
+{% load static %}
 
-        <ul>
-            <li><a href="{% url 'landing-page' %}" class="btn btn--without-border active">Start</a></li>
-            <li><a href="{% url 'landing-page' %}#steps" class="btn btn--without-border">O co chodzi?</a></li>
-            <li><a href="{% url 'landing-page' %}#about-us" class="btn btn--without-border">O nas</a></li>
-            <li><a href="{% url 'landing-page' %}#help" class="btn btn--without-border">Fundacje i organizacje</a></li>
-            <li><a href="{% url 'landing-page' %}#contact" class="btn btn--without-border">Kontakt</a></li>
-        </ul>
-    </nav>
+{% block style %}header--form-page{% endblock %}
+{% block header %}
 
     <div class="slogan container container--90">
         <h2>
-            Dziękujemy za przesłanie formularza Na maila prześlemy wszelkie
-            informacje o odbiorze.
+            Dziękujemy za przesłanie formularza </br>
+            Na maila prześlemy wszelkie informacje o odbiorze.
         </h2>
     </div>
 <!--</header>-->
+{% endblock %}
+{% block content %}
 
 
 <script src="{% static 'js/app.js' %}"></script>
