@@ -1,0 +1,58 @@
+{% extends "oddam_w_dobre_rece_app/base.html" %}
+
+{% load static %}
+
+{% block style %}{% endblock %}
+{% block header %}
+{% endblock %}
+{% block content %}
+<h1>Profil użytkownika</h1>
+<p><strong>Imię:</strong> {{ user.first_name }}</p>
+<p><strong>Nazwisko:</strong> {{ user.last_name }}</p>
+<p><strong>Email:</strong> {{ user.email }}</p></br>
+<h1>Przekazane dary</h1>
+    {% if donations %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Ilość worków</th>
+                    <th>Organizacja</th>
+                    <th>Kategorie</th>
+                    <th>Data odbioru</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for donation in donations %}
+                    <tr class="{% if donation.is_taken %}taken{% endif %}">
+                        <td>{{ donation.quantity }}</td>
+                        <td>{{ donation.institution.name }}</td>
+                        <td>
+                            {% for category in donation.categories.all %}
+                                {{ category.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>{{ donation.pick_up_date }} o {{ donation.pick_up_time }}</td>
+                        <td>
+                            <form method="post" action="{% url 'user-profile' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="donation_id" value="{{ donation.id }}">
+                                <button type="submit">
+                                    {% if donation.is_taken %}
+                                        Oznacz jako niezabrane
+                                    {% else %}
+                                        Oznacz jako zabrane
+                                    {% endif %}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Nie przekazałeś jeszcze żadnych darów.</p>
+    {% endif %}
+</br></br>
+<script src="{% static 'js/app.js' %}"></script>
+
+{% endblock %}

@@ -1,0 +1,14 @@
+<h1>Ustawienia użytkownika</h1>
+    <h2>Edytuj dane użytkownika</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ user_form.as_p }}
+        <button type="submit" name="update_user">Zapisz zmiany</button>
+    </form>
+
+    <h2>Zmień hasło</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ password_form.as_p }}
+        <button type="submit" name="change_password">Zmień hasło</button>
+    </form>
