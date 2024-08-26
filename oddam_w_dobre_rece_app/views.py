@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth import get_user_model, login, logout
+from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 # from django.contrib.auth.mixins import LoginRequiredMixin
@@ -14,11 +14,11 @@ from django.views import View
 from django.views.generic import FormView
 import json
 
-from oddam_w_dobre_rece_app.forms import RegisterForm
+from oddam_w_dobre_rece_app.forms import RegisterForm, UserUpdateForm, PasswordChangeCustomForm
 from oddam_w_dobre_rece_app.models import Donation, Institution, Category
 
-
 User = get_user_model()
+
 
 class LandingPage(View):
     def get(self, request, *args, **kwargs):
@@ -43,7 +43,6 @@ class LandingPage(View):
         page3 = request.GET.get('page')
         loc_page = paginator3.get_page(page3)
 
-
         context = {
             'bags_total': bags_total,
             'supported_institutions': supported_institutions,
@@ -52,6 +51,7 @@ class LandingPage(View):
             'loc_page': loc_page,
         }
         return render(request, "oddam_w_dobre_rece_app/index.html", context)
+
 
 class GetInstitutionsByCategoryApi(View):
     def get(self, request):
@@ -68,6 +68,7 @@ class GetInstitutionsByCategoryApi(View):
             })
         return JsonResponse(institutions_data, safe=False)
 
+
 class AddDonation(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         categories = Category.objects.all()
@@ -77,6 +78,7 @@ class AddDonation(LoginRequiredMixin, View):
             "institutions": institutions,
         }
         return render(request, "oddam_w_dobre_rece_app/form.html", context)
+
 
 class LoginView(View):
     def get(self, request, *args, **kwargs):
@@ -104,6 +106,7 @@ class LoginView(View):
         login(self.request, user)
         return super().form_valid(form)
 
+
 class Register(View):
     def get(self, request, *args, **kwargs):
         form = RegisterForm
@@ -124,11 +127,67 @@ class Register(View):
         else:
             return render(request, 'oddam_w_dobre_rece_app/register.html', context)
 
-class ProfileView(View):
-    pass
 
-class SettingsView(View):
-    pass
+class ProfileView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        donations = Donation.objects.filter(user=user).order_by('is_taken', '-pick_up_date')
+        context = {
+            'user': user,
+            'donations': donations,
+        }
+        return render(request, 'oddam_w_dobre_rece_app/user_profile.html', context)
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        donation_id = request.POST.get('donation_id')
+        donation = Donation.objects.get(id=donation_id, user=user)
+        donation.is_taken = not donation.is_taken
+        donation.save()
+        return redirect('user-profile')
+
+
+class SettingsView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        user_form = UserUpdateForm(instance=request.user)
+        password_form = PasswordChangeCustomForm(user=request.user)
+        context = {
+            'user_form': user_form,
+            'password_form': password_form,
+        }
+        return render(request, 'oddam_w_dobre_rece_app/user_settings.html', context)
+
+    def post(self, request, *args, **kwargs):
+        if 'update_user' in request.POST:
+            return self.handle_user_update(request)
+        elif 'change_password' in request.POST:
+            return self.handle_password_change(request)
+        else:
+            return self.get(request)
+
+    def handle_user_update(self, request):
+        user_form = UserUpdateForm(request.POST, instance=request.user)
+        if user_form.is_valid() and request.user.check_password(user_form.cleaned_data['current_password']):
+            user_form.save()
+            return redirect('settings')
+
+        return self.render_form(user_form=user_form)
+
+    def handle_password_change(self, request):
+        password_form = PasswordChangeCustomForm(user=request.user, data=request.POST)
+        if password_form.is_valid():
+            password_form.save()
+            update_session_auth_hash(request, password_form.user)
+            return redirect('settings')
+        return self.render_form(password_form=password_form)
+
+    def render_form(self, user_form=None, password_form=None):
+        context = {
+            'user_form': user_form or UserUpdateForm(instance=self.request.user),
+            'password_form': password_form or PasswordChangeCustomForm(user=self.request.user),
+        }
+        return render(self.request, 'oddam_w_dobre_rece_app/user_settings.html', context)
+
 
 class LogoutView(View):
     def get(self, request, *args, **kwargs):

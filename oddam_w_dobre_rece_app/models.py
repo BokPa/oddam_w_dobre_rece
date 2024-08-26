@@ -21,7 +21,12 @@ class Institution(models.Model):
     categories = models.ManyToManyField(Category)
 
     def __str__(self):
-        return self.name
+        return f"{self.get_type_display()} '{self.name}'"
+
+    class Meta:
+        verbose_name = "Instytucja"
+        verbose_name_plural = "Instytucje"
+        ordering = ['name']
 
 class Donation(models.Model):
     quantity = models.PositiveIntegerField() #Number of donated bags
@@ -40,3 +45,4 @@ class Donation(models.Model):
         null=True,
         blank=True,
     )
+    is_taken = models.BooleanField(default=False)
