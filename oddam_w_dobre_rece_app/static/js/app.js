@@ -349,7 +349,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 
-  fetch('/add-donation/form-confirmation/', {
+  fetch('/submit-donation/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

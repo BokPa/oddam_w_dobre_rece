@@ -32,5 +32,6 @@ urlpatterns = [
     path('logout/', oddam_views.LogoutView.as_view(), name="logout"),
     path('add-donation/form-confirmation/', oddam_views.FormConfirmationView.as_view(), name='form-confirmation'),
     path('user-profile/', oddam_views.ProfileView.as_view(), name="user-profile"),
+    path('submit-donation/', oddam_views.SubmitDonation.as_view(), name="submit-donation"),
 
 ]

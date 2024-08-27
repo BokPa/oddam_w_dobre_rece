@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 # from django.utils import timezone
 from django.views import View
 from django.views.generic import FormView
@@ -232,9 +232,10 @@ class SubmitDonation(View):
         )
         donation.categories.set(categories)
 
-        return JsonResponse({'success': True, 'redirect': 'form-confirmation'})
+        return JsonResponse({'success': True, 'redirect': reverse('form-confirmation')})
 
 
 class FormConfirmationView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'oddam_w_dobre_rece_app/form-confirmation.html')
+

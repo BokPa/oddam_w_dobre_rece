@@ -1,14 +1,27 @@
+{% extends "oddam_w_dobre_rece_app/base.html" %}
+
+
+{% load static %}
+
+{% block style %}{% endblock %}
+{% block header %}{% endblock %}
+{% block content %}
+</br></br>
 <h1>Ustawienia użytkownika</h1>
-    <h2>Edytuj dane użytkownika</h2>
+    <h3>Edytuj dane użytkownika</h3>
     <form method="post">
         {% csrf_token %}
         {{ user_form.as_p }}
         <button type="submit" name="update_user">Zapisz zmiany</button>
     </form>
 
-    <h2>Zmień hasło</h2>
+    <h3>Zmień hasło</h3>
     <form method="post">
         {% csrf_token %}
         {{ password_form.as_p }}
         <button type="submit" name="change_password">Zmień hasło</button>
     </form>
+</br></br>
+
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock %}
